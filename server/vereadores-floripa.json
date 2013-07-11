@@ -15,7 +15,9 @@
         "img": "http://www.cmf.sc.gov.br/images/stories/vereadores/eradiomanoelgoncalves.jpg",
         "nome": "Er\u00e1dio Manoel Gon\u00e7alves",
         "partido": "??",
-        "votacoes": {}
+        "votacoes": {
+            "1": "Sim"
+        }
     },
     {
         "bio": "",

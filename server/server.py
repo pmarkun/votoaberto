@@ -1,30 +1,24 @@
-from flask import Flask, abort, redirect, flash, url_for, g
-import sqlite3
+from flask import Flask, abort, redirect, flash, url_for, render_template
+import json
 from itsdangerous import URLSafeSerializer, BadSignature
 
-DATABASE = 'votoaberto.db'
+DATABASE = 'vereadores-floripa.json'
 
 app = Flask(__name__)
 app.secret_key = "woof"
 
-
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = connect_to_database()
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
-
-def query_db(query, args=(), one=False):
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    return (rv[0] if rv else None) if one else rv
+#dirty version - mudar pra DB
+def update_parlamentar(voto):
+    arquivo = open(DATABASE, 'r')
+    ps = json.loads(arquivo.read())
+    arquivo.close()
+    for p in ps:
+        if voto['parlamentar_id'] == p['id']:
+            p['votacoes'][voto['votacao_id']] = voto['voto']
+            stuff = json.dumps(ps, sort_keys=True, indent=4, separators=(',', ': '))
+            arquivo = open(DATABASE, 'w')
+            arquivo.write(stuff)
+            arquivo.close()
 
 def get_serializer(secret_key=None):
     if secret_key is None:
@@ -41,14 +35,21 @@ def hello():
     print get_activation_link("3")
     return "Hello World!"
 
+@app.route('/votacao/<votacao>')
+def votacao(votacao):
+    arquivo = open(DATABASE, 'r')
+    ps = json.loads(arquivo.read())
+    arquivo.close() 
+    return render_template('votacao.html', parlamentares=ps, votacao=votacao)
+
 @app.route('/voto/<votacao>/<parlamentar>/<voto>')
 def vota(votacao, parlamentar, voto):
     resultado = {
-        'votacao' : votacao,
-        'parlamentar' : parlamentar,
+        'votacao_id' : votacao,
+        'parlamentar_id' : parlamentar,
         'voto' : voto
     }
-    
+    print get_activation_link(resultado)
     return get_activation_link(resultado)
 
 @app.route('/voto/activate/<payload>')
@@ -58,7 +59,9 @@ def activate_voto(payload):
         voto = s.loads(payload)
     except BadSignature:
         abort(404)
+    update_parlamentar(voto)
     return redirect("/")
 
 if __name__ == "__main__":
+    app.debug = True
     app.run()

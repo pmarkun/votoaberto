@@ -19,12 +19,14 @@ for v in soup.xpath("//tr/td[@valign='top'][@colspan='2']"):
 	try:
 		vereador['partido'] = v.xpath(".//strong")[0].tail.strip("Partido:").strip()
 	except:
-		vereador['email'] = '??'
+		vereador['partido'] = '??'
 	vereador['email'] = fromstring(re.search(".*addy[0-9]* \= '(.*)' +", v.xpath(".//script")[0].text).group(1)).text + "@cmf.sc.gov.br"
+	vereador['id'] = vereador['email'].split('@')[0]
 	try:
 		vereador['bio'] = v.xpath(".//p")[1].text
 	except:
 		vereador['bio'] = ''
+	vereador['votacoes'] = {}
 	vereadores.append(vereador)
  
 zapt = open("vereadores-floripa.json", "w")
